@@ -1,0 +1,23 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Ore ESP RP",
+    "description": "Resource pack for Ore ESP.",
+    "uuid": "999e529b-91c1-4650-b983-3fbac982884a",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 110]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "ec132cd7-6fe1-4e0a-bb94-60e0b952152b",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "43fe0166-d38b-4282-98cb-b5e424156b6b",
+      "version": [1, 0, 0]
+    }
+  ]
+}

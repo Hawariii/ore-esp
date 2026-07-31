@@ -1,0 +1,41 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Ore ESP",
+    "description": "Highlight nearby ores with customizable ESP.",
+    "uuid": "43fe0166-d38b-4282-98cb-b5e424156b6b",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 110]
+  },
+  "modules": [
+    {
+      "type": "script",
+      "uuid": "5eb89642-a4f9-49e8-b0f3-e2007cf37236",
+      "version": [1, 0, 0],
+      "language": "javascript",
+      "entry": "scripts/main.js"
+    },
+    {
+      "type": "data",
+      "uuid": "3205ded7-43c8-470c-9604-ff09488cac2c",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "module_name": "@minecraft/server",
+      "version": "2.3.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "2.0.0"
+    }
+  ],
+  "metadata": {
+    "authors": [
+      "Hawariii/Aizhu"
+    ],
+    "license": "MIT",
+    "product_type": "addon"
+  }
+}
