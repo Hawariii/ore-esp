@@ -1,210 +1,238 @@
 /**
- * Ore ESP Cache System
- *
- * Menyimpan seluruh cache runtime.
- * Tidak ada data yang disimpan permanen.
+ * Chunk Cache
+ * Ore ESP
  */
 
-/**
- * blockKey -> Entity
- *
- * minecraft:overworld:10:64:-25
- */
-const glowEntities = new Map();
+const chunkCache = new Map();
+const glowCache = new Map();
 
-/**
- * playerId -> Set(chunkKey)
- *
- * Chunk yang sedang aktif untuk player.
- */
 const playerChunks = new Map();
-
-/**
- * playerId -> Set(blockKey)
- *
- * Ore yang sedang dirender player.
- */
 const playerBlocks = new Map();
 
-/**
- * chunkKey -> Block[]
- *
- * Hasil scan setiap chunk.
- */
-const scannedChunks = new Map();
+const removeQueue = [];
 
 /**
- * Block yang akan dihapus bertahap.
+ * ===============================
+ * Chunk
+ * ===============================
  */
-const removeQueue = new Set();
 
-/* ---------------------------------------------------------- */
-/* Helpers                                                    */
-/* ---------------------------------------------------------- */
-
-export function getBlockKey(dimensionId, x, y, z) {
-    return `${dimensionId}:${x}:${y}:${z}`;
+export function getChunkKey(
+    dimension,
+    chunkX,
+    chunkZ
+) {
+    return `${dimension}:${chunkX}:${chunkZ}`;
 }
 
-export function getChunkKey(dimensionId, chunkX, chunkZ) {
-    return `${dimensionId}:${chunkX}:${chunkZ}`;
+export function hasChunk(key) {
+    return chunkCache.has(key);
 }
 
-/* ---------------------------------------------------------- */
-/* Glow Entity Cache                                          */
-/* ---------------------------------------------------------- */
-
-export function hasGlow(blockKey) {
-    return glowEntities.has(blockKey);
+export function getChunk(key) {
+    return chunkCache.get(key);
 }
 
-export function getGlow(blockKey) {
-    return glowEntities.get(blockKey);
+export function setChunk(
+    key,
+    value
+) {
+    chunkCache.set(
+        key,
+        value
+    );
 }
 
-export function setGlow(blockKey, entity) {
-    glowEntities.set(blockKey, entity);
+export function deleteChunk(key) {
+    chunkCache.delete(key);
 }
 
-export function deleteGlow(blockKey) {
-    glowEntities.delete(blockKey);
+export function clearChunks() {
+    chunkCache.clear();
+}
+
+/**
+ * ===============================
+ * Player Chunk
+ * ===============================
+ */
+
+export function getPlayerChunks(
+    playerId
+) {
+    return (
+        playerChunks.get(playerId) ??
+        new Set()
+    );
+}
+
+export function setPlayerChunks(
+    playerId,
+    chunks
+) {
+    playerChunks.set(
+        playerId,
+        chunks
+    );
+}
+
+export function clearPlayerChunks(
+    playerId
+) {
+    playerChunks.delete(
+        playerId
+    );
+}
+
+/**
+ * ===============================
+ * Player Block
+ * ===============================
+ */
+
+export function getPlayerBlocks(
+    playerId
+) {
+    return (
+        playerBlocks.get(playerId) ??
+        new Set()
+    );
+}
+
+export function setPlayerBlocks(
+    playerId,
+    blocks
+) {
+    playerBlocks.set(
+        playerId,
+        blocks
+    );
+}
+
+export function clearPlayerBlocks(
+    playerId
+) {
+    playerBlocks.delete(
+        playerId
+    );
+}
+
+/**
+ * ===============================
+ * Glow Cache
+ * ===============================
+ */
+
+export function getBlockKey(
+    dimension,
+    x,
+    y,
+    z
+) {
+    return `${dimension}:${x}:${y}:${z}`;
+}
+
+export function hasGlow(
+    key
+) {
+    return glowCache.has(key);
+}
+
+export function getGlow(
+    key
+) {
+    return glowCache.get(key);
+}
+
+export function setGlow(
+    key,
+    entity
+) {
+    glowCache.set(
+        key,
+        entity
+    );
+}
+
+export function deleteGlow(
+    key
+) {
+    glowCache.delete(
+        key
+    );
 }
 
 export function clearGlowCache() {
-    glowEntities.clear();
+    glowCache.clear();
 }
 
-export function getGlowEntries() {
-    return glowEntities.entries();
-}
+/**
+ * ===============================
+ * Remove Queue
+ * ===============================
+ */
 
-export function getGlowSize() {
-    return glowEntities.size;
-}
-
-/* ---------------------------------------------------------- */
-/* Player Chunk Cache                                         */
-/* ---------------------------------------------------------- */
-
-export function getPlayerChunks(playerId) {
-
-    if (!playerChunks.has(playerId)) {
-        playerChunks.set(playerId, new Set());
-    }
-
-    return playerChunks.get(playerId);
-}
-
-export function setPlayerChunks(playerId, chunks) {
-    playerChunks.set(playerId, chunks);
-}
-
-export function clearPlayerChunks(playerId) {
-    playerChunks.delete(playerId);
-}
-
-export function deleteChunk(chunkKey) {
-    scannedChunks.delete(chunkKey);
-}
-
-/* ---------------------------------------------------------- */
-/* Player Block Cache                                         */
-/* ---------------------------------------------------------- */
-
-export function getPlayerBlocks(playerId) {
-
-    if (!playerBlocks.has(playerId)) {
-        playerBlocks.set(playerId, new Set());
-    }
-
-    return playerBlocks.get(playerId);
-}
-
-export function setPlayerBlocks(playerId, blocks) {
-    playerBlocks.set(playerId, blocks);
-}
-
-export function clearPlayerBlocks(playerId) {
-    playerBlocks.delete(playerId);
-}
-
-/* ---------------------------------------------------------- */
-/* Chunk Scan Cache                                           */
-/* ---------------------------------------------------------- */
-
-export function hasChunk(chunkKey) {
-    return scannedChunks.has(chunkKey);
-}
-
-export function getChunk(chunkKey) {
-    return scannedChunks.get(chunkKey);
-}
-
-export function setChunk(chunkKey, blocks) {
-    scannedChunks.set(chunkKey, blocks);
-}
-
-export function deleteChunk(chunkKey) {
-    scannedChunks.delete(chunkKey);
-}
-
-export function clearChunkCache() {
-    scannedChunks.clear();
-}
-
-/* ---------------------------------------------------------- */
-/* Remove Queue                                                */
-/* ---------------------------------------------------------- */
-
-export function queueRemove(blockKey) {
-    removeQueue.add(blockKey);
-}
-
-export function dequeueRemove(blockKey) {
-    removeQueue.delete(blockKey);
+export function queueRemove(
+    key
+) {
+    removeQueue.push(
+        key
+    );
 }
 
 export function getRemoveQueue() {
     return removeQueue;
 }
 
-/* ---------------------------------------------------------- */
-/* Cleanup                                                     */
-/* ---------------------------------------------------------- */
+export function popRemoveQueue() {
+    return removeQueue.shift();
+}
 
-export function clearPlayer(playerId) {
+/**
+ * ===============================
+ * Cleanup
+ * ===============================
+ */
 
-    clearPlayerBlocks(playerId);
-    clearPlayerChunks(playerId);
+export function clearPlayerCache(
+    playerId
+) {
+    playerChunks.delete(
+        playerId
+    );
 
+    playerBlocks.delete(
+        playerId
+    );
 }
 
 export function clearAllCache() {
 
-    glowEntities.clear();
+    chunkCache.clear();
+
+    glowCache.clear();
 
     playerChunks.clear();
 
     playerBlocks.clear();
 
-    scannedChunks.clear();
-
-    removeQueue.clear();
+    removeQueue.length = 0;
 
 }
 
-/* ---------------------------------------------------------- */
-/* Debug                                                       */
-/* ---------------------------------------------------------- */
+/**
+ * ===============================
+ * Debug
+ * ===============================
+ */
 
-export function getCacheInfo() {
+export function getCacheStats() {
 
     return {
-        glowEntities: glowEntities.size,
-        playerChunks: playerChunks.size,
-        playerBlocks: playerBlocks.size,
-        scannedChunks: scannedChunks.size,
-        removeQueue: removeQueue.size
+        chunks: chunkCache.size,
+        glows: glowCache.size,
+        players: playerChunks.size,
+        queuedRemovals: removeQueue.length
     };
 
 }
