@@ -1,32 +1,147 @@
 /**
- * Warna outline sesuai render controller.
- * Index harus sama dengan Array.textures di RP.
+ * Color Registry
+ *
+ * index harus sama dengan
+ * Array.textures di render_controller.
  */
 
-export const COLORS = {
-    WHITE: 0,
-    LIME: 1,
-    ORANGE: 2,
-    LIGHT_GRAY: 3,
-    YELLOW: 4,
-    AQUA: 5,
-    BLUE: 6,
-    RED: 7,
-    BLACK: 8,
-    BROWN: 9,
-    TEST: 10,
-};
+export const COLORS = [
 
-export const COLOR_NAMES = [
-    "White",
-    "Lime",
-    "Orange",
-    "Light Gray",
-    "Yellow",
-    "Aqua",
-    "Blue",
-    "Red",
-    "Black",
-    "Brown",
-    "Test",
+    {
+        id: "white",
+        name: "White",
+        index: 0
+    },
+
+    {
+        id: "lime",
+        name: "Lime",
+        index: 1
+    },
+
+    {
+        id: "orange",
+        name: "Orange",
+        index: 2
+    },
+
+    {
+        id: "light_gray",
+        name: "Light Gray",
+        index: 3
+    },
+
+    {
+        id: "yellow",
+        name: "Yellow",
+        index: 4
+    },
+
+    {
+        id: "aqua",
+        name: "Aqua",
+        index: 5
+    },
+
+    {
+        id: "blue",
+        name: "Blue",
+        index: 6
+    },
+
+    {
+        id: "red",
+        name: "Red",
+        index: 7
+    },
+
+    {
+        id: "black",
+        name: "Black",
+        index: 8
+    },
+
+    {
+        id: "brown",
+        name: "Brown",
+        index: 9
+    },
+
+    {
+        id: "test",
+        name: "Test",
+        index: 10
+    }
+
 ];
+
+/**
+ * Ambil color berdasarkan index.
+ */
+export function getColorByIndex(
+    index
+) {
+
+    return COLORS.find(
+        color => color.index === index
+    ) ?? null;
+
+}
+
+/**
+ * Ambil color berdasarkan id.
+ */
+export function getColorById(
+    id
+) {
+
+    return COLORS.find(
+        color => color.id === id
+    ) ?? null;
+
+}
+
+/**
+ * Ambil nama color.
+ */
+export function getColorName(
+    index
+) {
+
+    return (
+        getColorByIndex(index)?.name ??
+        "Unknown"
+    );
+
+}
+
+/**
+ * Validasi index.
+ */
+export function isValidColor(
+    index
+) {
+
+    return (
+        index >= 0 &&
+        index < COLORS.length
+    );
+
+}
+
+/**
+ * Clamp index.
+ */
+export function clampColorIndex(
+    index
+) {
+
+    if (index < 0)
+        return 0;
+
+    if (index >= COLORS.length)
+        return COLORS.length - 1;
+
+    return index;
+
+}
