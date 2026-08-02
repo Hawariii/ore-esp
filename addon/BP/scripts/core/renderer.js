@@ -1,84 +1,239 @@
 import {
-    addGlowEntity,
-    clearGlowEntities,
-    getGlowEntity,
-    getGlowEntities,
-    removeGlowEntity,
-} from "./cache.js";
+    world
+} from "@minecraft/server";
 
 import {
-    locationToKey,
-    centerLocation,
-} from "./utils.js";
+    getBlockKey,
+    getGlow,
+    setGlow,
+    deleteGlow,
+    getGlowEntries,
+    getRemoveQueue,
+    dequeueRemove
+} from "./cache.js";
 
 /**
- * Spawn glow pada block ore.
- *
- * @param {import("@minecraft/server").Player} player
- * @param {import("@minecraft/server").Block} block
- * @param {{color:number,texture:number}} ore
- * @param {number} style
+ * Spawn glow entity.
  */
-export function renderOre(player, block, ore, style) {
-    const key = locationToKey(block.location);
+export function createGlow(block, oreData) {
 
-    if (getGlowEntity(player.id, key)) {
-        return;
+    const key = getBlockKey(
+        block.dimension.id,
+        block.location.x,
+        block.location.y,
+        block.location.z
+    );
+
+    const old = getGlow(key);
+
+    if (old?.isValid()) {
+
+        updateGlow(old, oreData);
+
+        return old;
+
     }
 
-    let entity;
+    const entity = block.dimension.spawnEntity(
+        "es:glowblock",
+        {
+            x: block.location.x + 0.5,
+            y: block.location.y,
+            z: block.location.z + 0.5
+        }
+    );
+
+    entity.nameTag = "";
+
+    entity.setProperty(
+        "es:glow_type",
+        oreData.style ?? "ore"
+    );
+
+    entity.setProperty(
+        "es:ore_index",
+        oreData.index
+    );
+
+    if (oreData.color !== undefined) {
+
+        entity.setProperty(
+            "es:color_index",
+            oreData.color
+        );
+
+    }
+
+    setGlow(key, entity);
+
+    return entity;
+
+}
+
+/**
+ * Update entity property.
+ */
+export function updateGlow(entity, oreData) {
+
+    if (!entity?.isValid()) return;
+
+    entity.setProperty(
+        "es:glow_type",
+        oreData.style ?? "ore"
+    );
+
+    entity.setProperty(
+        "es:ore_index",
+        oreData.index
+    );
+
+    if (oreData.color !== undefined) {
+
+        entity.setProperty(
+            "es:color_index",
+            oreData.color
+        );
+
+    }
+
+}
+
+/**
+ * Remove glow by block.
+ */
+export function removeGlow(block) {
+
+    const key = getBlockKey(
+        block.dimension.id,
+        block.location.x,
+        block.location.y,
+        block.location.z
+    );
+
+    removeGlowByKey(key);
+
+}
+
+/**
+ * Remove glow by key.
+ */
+export function removeGlowByKey(key) {
+
+    const entity = getGlow(key);
+
+    if (!entity) return;
 
     try {
-        entity = player.dimension.spawnEntity(
-            "es:glowblock",
-            centerLocation(block.location)
-        );
-    } catch {
-        return;
-    }
 
-    switch (style) {
-        case 0:
-            entity.setProperty("es:glow_type", "box");
-            entity.setProperty("es:color_index", ore.color);
-            break;
+        if (entity.isValid()) {
 
-        case 1:
-            entity.setProperty("es:glow_type", "ore");
-            entity.setProperty("es:ore_index", ore.texture);
-            break;
+            entity.triggerEvent(
+                "es:despawn"
+            );
 
-        case 2:
-            entity.setProperty("es:glow_type", "outline");
-            entity.setProperty("es:color_index", ore.color);
-            break;
-    }
-
-    addGlowEntity(player.id, key, entity);
-}
-
-/**
- * Hapus semua render player.
- * @param {import("@minecraft/server").Player} player
- */
-export function clearPlayerRender(player) {
-    clearGlowEntities(player.id);
-}
-
-/**
- * Bersihkan entity yang sudah invalid.
- * @param {import("@minecraft/server").Player} player
- */
-export function cleanupInvalidEntities(player) {
-    const entities = getGlowEntities(player.id);
-
-    for (const [key, entity] of entities) {
-        try {
-            if (!entity.isValid()) {
-                removeGlowEntity(player.id, key);
-            }
-        } catch {
-            removeGlowEntity(player.id, key);
         }
+
+    } catch {}
+
+    deleteGlow(key);
+
+}
+
+/**
+ * Remove semua queue.
+ *
+ * Dipanggil tiap tick.
+ */
+export function processRemoveQueue(limit = 30) {
+
+    const queue = getRemoveQueue();
+
+    let count = 0;
+
+    for (const key of queue) {
+
+        removeGlowByKey(key);
+
+        dequeueRemove(key);
+
+        count++;
+
+        if (count >= limit)
+            break;
+
     }
+
+}
+
+/**
+ * Bersihkan entity invalid.
+ */
+export function cleanupRenderer() {
+
+    for (const [key, entity] of getGlowEntries()) {
+
+        if (!entity?.isValid()) {
+
+            deleteGlow(key);
+
+            continue;
+
+        }
+
+        try {
+
+            entity.dimension;
+
+        } catch {
+
+            deleteGlow(key);
+
+        }
+
+    }
+
+}
+
+/**
+ * Remove semua glow.
+ *
+ * Dipakai saat reload addon.
+ */
+export function removeAllGlow() {
+
+    for (const [key, entity] of getGlowEntries()) {
+
+        try {
+
+            if (entity.isValid()) {
+
+                entity.triggerEvent(
+                    "es:despawn"
+                );
+
+            }
+
+        } catch {}
+
+        deleteGlow(key);
+
+    }
+
+}
+
+/**
+ * Debug.
+ */
+export function getGlowCount() {
+
+    let total = 0;
+
+    for (const _ of getGlowEntries()) {
+
+        total++;
+
+    }
+
+    return total;
+
 }

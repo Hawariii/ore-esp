@@ -103,6 +103,10 @@ export function clearPlayerChunks(playerId) {
     playerChunks.delete(playerId);
 }
 
+export function deleteChunk(chunkKey) {
+    scannedChunks.delete(chunkKey);
+}
+
 /* ---------------------------------------------------------- */
 /* Player Block Cache                                         */
 /* ---------------------------------------------------------- */
