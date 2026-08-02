@@ -1,26 +1,58 @@
-import { world } from "@minecraft/server";
+import { world, system } from "@minecraft/server";
 
-import { CONFIG } from "./config.js";
+import {
+    CONFIG
+} from "./config.js";
+
+import {
+    ORES
+} from "../data/ores.js";
 
 import {
     getChunkKey,
+    getBlockKey,
+    hasChunk,
+    getChunk,
+    setChunk,
+    deleteChunk,
+    getPlayerBlocks,
+    setPlayerBlocks,
     getPlayerChunks,
     setPlayerChunks,
-    getPlayerBlocks
+    queueRemove
 } from "./cache.js";
 
 import {
-    enqueueChunk
-} from "./chunk.js";
-
-import {
-    removeGlow
+    createGlow
 } from "./renderer.js";
 
 /**
- * Mengubah koordinat block menjadi koordinat chunk.
+ * Queue chunk scan.
  */
-export function getChunkPos(x, z) {
+const scanQueue = [];
+
+/**
+ * Last access tick.
+ */
+const chunkLastAccess = new Map();
+
+/**
+ * Chunk diproses tiap tick.
+ */
+const SCAN_PER_TICK = 2;
+
+/**
+ * Cache timeout.
+ */
+const CACHE_TIME = 20 * 60;
+
+/**
+ * Ambil koordinat chunk.
+ */
+export function getChunkPos(
+    x,
+    z
+) {
 
     return {
         x: Math.floor(x / 16),
@@ -30,9 +62,14 @@ export function getChunkPos(x, z) {
 }
 
 /**
- * Menghitung jarak chunk.
+ * Jarak chunk.
  */
-function chunkDistance(ax, az, bx, bz) {
+function chunkDistance(
+    ax,
+    az,
+    bx,
+    bz
+) {
 
     const dx = ax - bx;
     const dz = az - bz;
@@ -42,10 +79,11 @@ function chunkDistance(ax, az, bx, bz) {
 }
 
 /**
- * Mengambil semua chunk yang berada
- * dalam radius player.
+ * Semua chunk sekitar player.
  */
-export function getNearbyChunks(player) {
+export function getNearbyChunks(
+    player
+) {
 
     const origin = getChunkPos(
         player.location.x,
@@ -67,18 +105,14 @@ export function getNearbyChunks(player) {
         ) {
 
             chunks.push({
-
                 x,
-
                 z,
-
                 distance: chunkDistance(
                     origin.x,
                     origin.z,
                     x,
                     z
                 )
-
             });
 
         }
@@ -86,7 +120,8 @@ export function getNearbyChunks(player) {
     }
 
     chunks.sort(
-        (a, b) => a.distance - b.distance
+        (a, b) =>
+            a.distance - b.distance
     );
 
     return chunks;
@@ -94,26 +129,137 @@ export function getNearbyChunks(player) {
 }
 
 /**
- * Update scanner player.
- *
- * Dipanggil ketika player spawn,
- * pindah chunk, atau refresh.
+ * Scan satu chunk.
  */
-export function updatePlayerScanner(player) {
+export function scanChunk(
+    player,
+    chunkX,
+    chunkZ
+) {
+
+    const dimension = player.dimension;
+
+    const minX = chunkX * 16;
+    const maxX = minX + 15;
+
+    const minZ = chunkZ * 16;
+    const maxZ = minZ + 15;
+
+    const centerY = Math.floor(
+        player.location.y
+    );
+
+    const minY = Math.max(
+        dimension.heightRange.min,
+        centerY - CONFIG.verticalRadius
+    );
+
+    const maxY = Math.min(
+        dimension.heightRange.max,
+        centerY + CONFIG.verticalRadius
+    );
+
+    const ores = [];
+
+    for (
+        let x = minX;
+        x <= maxX;
+        x++
+    ) {
+
+        for (
+            let z = minZ;
+            z <= maxZ;
+            z++
+        ) {
+
+            for (
+                let y = minY;
+                y <= maxY;
+                y++
+            ) {
+
+                const block =
+                    dimension.getBlock({
+                        x,
+                        y,
+                        z
+                    });
+
+                if (!block)
+                    continue;
+
+                const ore =
+                    ORES[
+                        block.typeId
+                    ];
+
+                if (!ore)
+                    continue;
+
+                ores.push({
+                    block,
+                    ore
+                });
+
+            }
+
+        }
+
+    }
+
+    return ores;
+
+}
+
+/**
+ * Masukkan chunk ke queue.
+ */
+function enqueueChunk(
+    player,
+    chunk
+) {
+
+    scanQueue.push({
+        player,
+        chunk
+    });
+
+}
+
+/**
+ * Paksa scan ulang player.
+ */
+export function rescanPlayer(
+    player
+) {
+
+    setPlayerChunks(
+        player.id,
+        new Set()
+    );
+
+    updatePlayerScanner(
+        player
+    );
+
+}
+
+/**
+ * Update scanner player.
+ */
+export function updatePlayerScanner(
+    player
+) {
 
     const playerId = player.id;
 
-    const oldChunks =
-        getPlayerChunks(playerId);
-
     const newChunks = new Set();
+    const newBlocks = new Set();
 
     const nearbyChunks =
         getNearbyChunks(player);
 
-    /**
-     * Tambahkan chunk baru.
-     */
     for (const chunk of nearbyChunks) {
 
         const chunkKey = getChunkKey(
@@ -124,106 +270,195 @@ export function updatePlayerScanner(player) {
 
         newChunks.add(chunkKey);
 
-        if (oldChunks.has(chunkKey))
-            continue;
+        let ores;
 
-        enqueueChunk(
-            player,
-            chunk.x,
-            chunk.z
+        if (hasChunk(chunkKey)) {
+
+            ores = getChunk(chunkKey);
+
+        } else {
+
+            ores = scanChunk(
+                player,
+                chunk.x,
+                chunk.z
+            );
+
+            setChunk(
+                chunkKey,
+                ores
+            );
+
+        }
+
+        chunkLastAccess.set(
+            chunkKey,
+            system.currentTick
         );
+
+        for (const info of ores) {
+
+            const block = info.block;
+            const ore = info.ore;
+
+            if (!ore.enabled)
+                continue;
+
+            const blockKey =
+                getBlockKey(
+                    player.dimension.id,
+                    block.location.x,
+                    block.location.y,
+                    block.location.z
+                );
+
+            newBlocks.add(blockKey);
+
+            createGlow(
+                block,
+                ore
+            );
+
+        }
 
     }
 
-    /**
-     * Hapus glow dari chunk
-     * yang keluar radius.
-     */
-    removeUnusedBlocks(
-        player,
-        oldChunks,
-        newChunks
-    );
+    const oldBlocks =
+        getPlayerBlocks(playerId);
 
-    /**
-     * Simpan chunk terbaru.
-     */
+    for (const key of oldBlocks) {
+
+        if (!newBlocks.has(key)) {
+
+            queueRemove(key);
+
+        }
+
+    }
+
     setPlayerChunks(
         playerId,
         newChunks
     );
 
-}
-
-/**
- * Paksa scan ulang.
- */
-export function rescanPlayer(player) {
-
-    setPlayerChunks(
-        player.id,
-        new Set()
+    setPlayerBlocks(
+        playerId,
+        newBlocks
     );
 
-    updatePlayerScanner(player);
-
 }
 
 /**
- * Menghapus glow yang
- * sudah keluar dari radius.
+ * Proses queue scan.
  */
-function removeUnusedBlocks(
-    player,
-    oldChunks,
-    newChunks
-) {
+export function processScanQueue() {
 
-    /**
-     * Tidak ada chunk lama.
-     */
-    if (oldChunks.size === 0)
-        return;
+    let count = 0;
 
-    const playerBlocks =
-        getPlayerBlocks(player.id);
+    while (
+        scanQueue.length > 0 &&
+        count < SCAN_PER_TICK
+    ) {
 
-    for (const blockKey of playerBlocks) {
+        const data =
+            scanQueue.shift();
 
-        const parts = blockKey.split("|");
-
-        if (parts.length < 4)
+        if (
+            !data?.player?.isValid()
+        )
             continue;
 
-        const x = Number(parts[1]);
-        const z = Number(parts[3]);
+        const chunkKey =
+            getChunkKey(
+                data.player.dimension.id,
+                data.chunk.x,
+                data.chunk.z
+            );
 
-        const chunk = getChunkPos(x, z);
+        let ores;
 
-        const chunkKey = getChunkKey(
-            player.dimension.id,
-            chunk.x,
-            chunk.z
+        if (hasChunk(chunkKey)) {
+
+            ores =
+                getChunk(chunkKey);
+
+        } else {
+
+            ores = scanChunk(
+                data.player,
+                data.chunk.x,
+                data.chunk.z
+            );
+
+            setChunk(
+                chunkKey,
+                ores
+            );
+
+        }
+
+        chunkLastAccess.set(
+            chunkKey,
+            system.currentTick
         );
 
-        if (newChunks.has(chunkKey))
-            continue;
+        for (const info of ores) {
 
-        removeGlow(blockKey);
+            if (
+                !info.ore.enabled
+            )
+                continue;
+
+            createGlow(
+                info.block,
+                info.ore
+            );
+
+        }
+
+        count++;
 
     }
 
 }
 
 /**
- * Update scanner
- * semua player.
+ * Bersihkan chunk cache
+ * yang sudah lama tidak dipakai.
+ */
+export function cleanupChunkCache() {
+
+    for (const [
+        key,
+        tick
+    ] of chunkLastAccess) {
+
+        if (
+            system.currentTick - tick <
+            CACHE_TIME
+        )
+            continue;
+
+        chunkLastAccess.delete(
+            key
+        );
+
+        deleteChunk(key);
+
+    }
+
+}
+
+/**
+ * Update semua player.
  */
 export function updateAllPlayers() {
 
     for (const player of world.getAllPlayers()) {
 
-        updatePlayerScanner(player);
+        updatePlayerScanner(
+            player
+        );
 
     }
 

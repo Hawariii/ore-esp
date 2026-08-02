@@ -1,21 +1,20 @@
-import {
-    world
-} from "@minecraft/server";
+import { world } from "@minecraft/server";
 
 import {
-    getBlockKey,
+    hasGlow,
     getGlow,
     setGlow,
     deleteGlow,
-    getGlowEntries,
-    getRemoveQueue,
-    dequeueRemove
+    getBlockKey
 } from "./cache.js";
 
 /**
  * Spawn glow entity.
  */
-export function createGlow(block, oreData) {
+export function createGlow(
+    block,
+    ore
+) {
 
     const key = getBlockKey(
         block.dimension.id,
@@ -24,13 +23,14 @@ export function createGlow(block, oreData) {
         block.location.z
     );
 
-    const old = getGlow(key);
+    if (hasGlow(key)) {
 
-    if (old?.isValid()) {
+        const entity = getGlow(key);
 
-        updateGlow(old, oreData);
+        if (entity?.isValid())
+            return entity;
 
-        return old;
+        deleteGlow(key);
 
     }
 
@@ -43,89 +43,147 @@ export function createGlow(block, oreData) {
         }
     );
 
-    entity.nameTag = "";
-
-    entity.setProperty(
-        "es:glow_type",
-        oreData.style ?? "ore"
+    setGlow(
+        key,
+        entity
     );
 
-    entity.setProperty(
-        "es:ore_index",
-        oreData.index
+    updateGlow(
+        entity,
+        ore
     );
-
-    if (oreData.color !== undefined) {
-
-        entity.setProperty(
-            "es:color_index",
-            oreData.color
-        );
-
-    }
-
-    setGlow(key, entity);
 
     return entity;
 
 }
 
 /**
- * Update entity property.
+ * Update glow entity.
  */
-export function updateGlow(entity, oreData) {
+export function updateGlow(
+    entity,
+    ore
+) {
 
-    if (!entity?.isValid()) return;
+    if (!entity?.isValid())
+        return;
 
     entity.setProperty(
         "es:glow_type",
-        oreData.style ?? "ore"
+        ore.glowType
     );
 
     entity.setProperty(
         "es:ore_index",
-        oreData.index
+        ore.index
     );
 
-    if (oreData.color !== undefined) {
+    entity.setProperty(
+        "es:color_index",
+        ore.color
+    );
 
-        entity.setProperty(
-            "es:color_index",
-            oreData.color
+}
+
+/**
+ * Remove glow berdasarkan entity.
+ */
+export function removeGlow(
+    entity
+) {
+
+    if (!entity?.isValid())
+        return;
+
+    entity.triggerEvent(
+        "es:despawn"
+    );
+
+}
+
+/**
+ * Remove glow berdasarkan block key.
+ */
+export function removeGlowByKey(
+    key
+) {
+
+    if (!hasGlow(key))
+        return;
+
+    const entity = getGlow(key);
+
+    if (entity?.isValid()) {
+
+        entity.triggerEvent(
+            "es:despawn"
         );
+
+    }
+
+    deleteGlow(key);
+
+}
+
+import {
+    popRemoveQueue,
+    getRemoveQueue,
+    getCacheStats,
+    clearAllCache,
+    getGlow
+} from "./cache.js";
+
+/**
+ * Maksimal glow yang dihapus
+ * setiap tick.
+ */
+const REMOVE_PER_TICK = 50;
+
+/**
+ * Proses queue remove.
+ */
+export function processRemoveQueue() {
+
+    let count = 0;
+
+    while (
+        getRemoveQueue().length > 0 &&
+        count < REMOVE_PER_TICK
+    ) {
+
+        const key = popRemoveQueue();
+
+        if (!key)
+            continue;
+
+        removeGlowByKey(key);
+
+        count++;
 
     }
 
 }
 
 /**
- * Remove glow by block.
+ * Hapus semua glow.
  */
-export function removeGlow(block) {
+export function removeAllGlow() {
 
-    const key = getBlockKey(
-        block.dimension.id,
-        block.location.x,
-        block.location.y,
-        block.location.z
-    );
+    const stats = getCacheStats();
 
-    removeGlowByKey(key);
+    if (stats.glows <= 0) {
 
-}
+        clearAllCache();
 
-/**
- * Remove glow by key.
- */
-export function removeGlowByKey(key) {
+        return;
 
-    const entity = getGlow(key);
+    }
 
-    if (!entity) return;
+    for (const entity of world.getDimension("overworld").getEntities({
+        type: "es:glowblock"
+    })) {
 
-    try {
-
-        if (entity.isValid()) {
+        if (entity?.isValid()) {
 
             entity.triggerEvent(
                 "es:despawn"
@@ -133,107 +191,36 @@ export function removeGlowByKey(key) {
 
         }
 
-    } catch {}
-
-    deleteGlow(key);
-
-}
-
-/**
- * Remove semua queue.
- *
- * Dipanggil tiap tick.
- */
-export function processRemoveQueue(limit = 30) {
-
-    const queue = getRemoveQueue();
-
-    let count = 0;
-
-    for (const key of queue) {
-
-        removeGlowByKey(key);
-
-        dequeueRemove(key);
-
-        count++;
-
-        if (count >= limit)
-            break;
-
     }
 
-}
+    for (const entity of world.getDimension("nether").getEntities({
+        type: "es:glowblock"
+    })) {
 
-/**
- * Bersihkan entity invalid.
- */
-export function cleanupRenderer() {
+        if (entity?.isValid()) {
 
-    for (const [key, entity] of getGlowEntries()) {
-
-        if (!entity?.isValid()) {
-
-            deleteGlow(key);
-
-            continue;
-
-        }
-
-        try {
-
-            entity.dimension;
-
-        } catch {
-
-            deleteGlow(key);
+            entity.triggerEvent(
+                "es:despawn"
+            );
 
         }
 
     }
 
-}
+    for (const entity of world.getDimension("the_end").getEntities({
+        type: "es:glowblock"
+    })) {
 
-/**
- * Remove semua glow.
- *
- * Dipakai saat reload addon.
- */
-export function removeAllGlow() {
+        if (entity?.isValid()) {
 
-    for (const [key, entity] of getGlowEntries()) {
+            entity.triggerEvent(
+                "es:despawn"
+            );
 
-        try {
-
-            if (entity.isValid()) {
-
-                entity.triggerEvent(
-                    "es:despawn"
-                );
-
-            }
-
-        } catch {}
-
-        deleteGlow(key);
+        }
 
     }
 
-}
-
-/**
- * Debug.
- */
-export function getGlowCount() {
-
-    let total = 0;
-
-    for (const _ of getGlowEntries()) {
-
-        total++;
-
-    }
-
-    return total;
+    clearAllCache();
 
 }

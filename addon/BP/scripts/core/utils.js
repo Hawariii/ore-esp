@@ -1,92 +1,232 @@
 /**
- * Mengubah lokasi block menjadi key.
- * Contoh:
- * 10,64,-5
+ * Ore ESP Utils
+ */
+
+/**
+ * Lokasi -> string key.
  *
- * @param {{x:number,y:number,z:number}} location
- * @returns {string}
+ * x,y,z
  */
 export function locationToKey(location) {
+
     return `${location.x},${location.y},${location.z}`;
+
 }
 
 /**
- * Chunk -> radius block.
- * Contoh:
- * 3 chunk = 48 block
- * 7 chunk = 112 block
+ * Chunk -> block.
  *
- * @param {number} chunks
+ * 1 chunk = 16 block
  */
 export function chunkToBlockRadius(chunks) {
+
     return chunks * 16;
+
 }
 
 /**
- * Mengembalikan titik tengah block.
- *
- * @param {{x:number,y:number,z:number}} location
+ * Tengah block.
  */
 export function centerLocation(location) {
+
     return {
         x: location.x + 0.5,
         y: location.y + 0.5,
-        z: location.z + 0.5,
+        z: location.z + 0.5
     };
+
 }
 
 /**
- * Distance tanpa sqrt.
- * Jauh lebih cepat dibanding Math.sqrt().
- *
- * @param {{x:number,y:number,z:number}} a
- * @param {{x:number,y:number,z:number}} b
+ * Distance²
+ * Lebih cepat daripada Math.sqrt().
  */
-export function distanceSquared(a, b) {
+export function distanceSquared(
+    a,
+    b
+) {
+
     const dx = a.x - b.x;
     const dy = a.y - b.y;
     const dz = a.z - b.z;
 
-    return dx * dx + dy * dy + dz * dz;
+    return (
+        dx * dx +
+        dy * dy +
+        dz * dz
+    );
+
 }
 
 /**
- * Mengecek apakah player sudah bergerak cukup jauh.
- *
- * @param {{x:number,y:number,z:number}|null} previous
- * @param {{x:number,y:number,z:number}} current
- * @param {number} threshold
+ * Player sudah bergerak?
  */
-export function isPlayerMovedEnough(previous, current, threshold) {
-    if (!previous) return true;
+export function isPlayerMovedEnough(
+    previous,
+    current,
+    threshold
+) {
 
-    const thresholdSquared = threshold * threshold;
+    if (!previous)
+        return true;
+
+    const limit =
+        threshold * threshold;
 
     return (
-        distanceSquared(previous, current) >= thresholdSquared
+        distanceSquared(
+            previous,
+            current
+        ) >= limit
     );
+
 }
 
 /**
- * Clamp angka.
- *
- * @param {number} value
- * @param {number} min
- * @param {number} max
+ * Clamp number.
  */
-export function clamp(value, min, max) {
-    return Math.max(min, Math.min(max, value));
+export function clamp(
+    value,
+    min,
+    max
+) {
+
+    return Math.max(
+        min,
+        Math.min(
+            max,
+            value
+        )
+    );
+
 }
 
 /**
- * Membulatkan lokasi block.
- *
- * @param {{x:number,y:number,z:number}} location
+ * Floor location.
  */
-export function floorLocation(location) {
+export function floorLocation(
+    location
+) {
+
     return {
-        x: Math.floor(location.x),
-        y: Math.floor(location.y),
-        z: Math.floor(location.z),
+
+        x: Math.floor(
+            location.x
+        ),
+
+        y: Math.floor(
+            location.y
+        ),
+
+        z: Math.floor(
+            location.z
+        )
+
     };
+
+}
+
+/**
+ * World -> Chunk X/Z.
+ */
+export function worldToChunk(
+    value
+) {
+
+    return Math.floor(
+        value / 16
+    );
+
+}
+
+/**
+ * Chunk key.
+ */
+export function chunkKey(
+    dimension,
+    chunkX,
+    chunkZ
+) {
+
+    return `${dimension}:${chunkX}:${chunkZ}`;
+
+}
+
+/**
+ * Block key.
+ */
+export function blockKey(
+    dimension,
+    x,
+    y,
+    z
+) {
+
+    return `${dimension}:${x}:${y}:${z}`;
+
+}
+
+/**
+ * Chunk distance².
+ */
+export function chunkDistanceSquared(
+    ax,
+    az,
+    bx,
+    bz
+) {
+
+    const dx = ax - bx;
+    const dz = az - bz;
+
+    return (
+        dx * dx +
+        dz * dz
+    );
+
+}
+
+/**
+ * World location -> Chunk.
+ */
+export function locationToChunk(
+    location
+) {
+
+    return {
+
+        x: worldToChunk(
+            location.x
+        ),
+
+        z: worldToChunk(
+            location.z
+        )
+
+    };
+
+}
+
+/**
+ * Cek apakah block berada
+ * di dalam chunk.
+ */
+export function isBlockInChunk(
+    location,
+    chunkX,
+    chunkZ
+) {
+
+    return (
+
+        worldToChunk(
+            location.x
+        ) === chunkX &&
+
+        worldToChunk(
+            location.z
+        ) === chunkZ
+
+    );
+
 }
