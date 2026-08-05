@@ -1,4 +1,7 @@
-import { world } from "@minecraft/server";
+import {
+    world,
+    ItemStack
+} from "@minecraft/server";
 
 import {
     getPlayerData
@@ -23,6 +26,18 @@ world.afterEvents.playerSpawn.subscribe(event => {
 
     getPlayerData(
         player.id
+    );
+
+    const inventory =
+        player.getComponent(
+            "minecraft:inventory"
+        );
+
+    inventory?.container?.addItem(
+        new ItemStack(
+            "oreesp:menu",
+            1
+        )
     );
 
     updatePlayerScanner(
