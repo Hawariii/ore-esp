@@ -66,13 +66,13 @@ const CATEGORY_MAP = {
  */
 const CATEGORY_TITLE = {
 
-    valuable: "💎 Valuable",
+    valuable: "Valuable",
 
-    metal: "🪙 Metal",
+    metal: "Metal",
 
-    common: "🪨 Common",
+    common: "Common",
 
-    nether: "🔥 Nether"
+    nether: "Nether"
 
 };
 
@@ -142,8 +142,8 @@ export async function showOreCategoryMenu(
 
         const icon =
             enabled
-                ? "🟢"
-                : "🔴";
+                ? "[ON]"
+                : "[OFF]";
 
         form.button(
 
@@ -157,7 +157,7 @@ export async function showOreCategoryMenu(
      * Tombol kembali.
      */
     form.button(
-        "⬅ Back"
+        "Back"
     );
 
     const result =

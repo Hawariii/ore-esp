@@ -20,19 +20,19 @@ const CHANGELOG = [
         version: "v1.0.0",
         changes: [
 
-            "✨ Initial Release",
+            "Initial Release",
 
-            "⛏ Added Ore ESP",
+            "Added Ore ESP",
 
-            "⚡ Fast Chunk Scanner",
+            "Fast Chunk Scanner",
 
-            "💎 Per-Ore Toggle",
+            "Per-Ore Toggle",
 
-            "👤 Per Player Settings",
+            "Per Player Settings",
 
-            "📡 Adjustable Scan Radius",
+            "Adjustable Scan Radius",
 
-            "🖥 Modern User Interface"
+            "Modern User Interface"
 
         ]
     }
@@ -67,7 +67,7 @@ export async function showChangelogMenu(player) {
 
             .body(body)
 
-            .button("⬅ Back");
+            .button("Back");
 
     const result =
         await form.show(player);

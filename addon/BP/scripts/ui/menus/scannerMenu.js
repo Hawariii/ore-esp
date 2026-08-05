@@ -65,17 +65,17 @@ export async function showScannerMenu(player) {
 
             ].join("\n"))
 
-            .button("◀ Horizontal")
+            .button("< Horizontal")
 
-            .button("▶ Horizontal")
+            .button("> Horizontal")
 
-            .button("◀ Vertical")
+            .button("< Vertical")
 
-            .button("▶ Vertical")
+            .button("> Vertical")
 
-            .button("🔄 Refresh Scanner")
+            .button("Refresh Scanner")
 
-            .button("⬅ Back");
+            .button("Back");
 
     const result =
         await form.show(player);

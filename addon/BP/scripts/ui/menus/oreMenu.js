@@ -25,25 +25,25 @@ const CATEGORIES = [
 
     {
         id: "valuable",
-        icon: "💎",
+        icon: "",
         name: "Valuable"
     },
 
     {
         id: "metal",
-        icon: "🪙",
+        icon: "",
         name: "Metal"
     },
 
     {
         id: "common",
-        icon: "🪨",
+        icon: "",
         name: "Common"
     },
 
     {
         id: "nether",
-        icon: "🔥",
+        icon: "",
         name: "Nether"
     }
 
@@ -79,7 +79,7 @@ export async function showOreMenu(player) {
 
     }
 
-    form.button("⬅ Back");
+    form.button("Back");
 
     const result =
         await form.show(player);

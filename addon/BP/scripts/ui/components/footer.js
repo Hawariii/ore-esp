@@ -15,7 +15,7 @@ export function getFooter() {
 
         "",
 
-        "Made with ❤️ by Aizhu"
+        "Made by Aizhu"
 
     ].join("\n");
 

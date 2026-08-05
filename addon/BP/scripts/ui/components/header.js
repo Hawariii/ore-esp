@@ -7,7 +7,7 @@ export function getHeader(
 
     return [
         "━━━━━━━━━━━━━━━━━━━━━━",
-        `        ⛏ ${title}`,
+        `        ${title}`,
         "━━━━━━━━━━━━━━━━━━━━━━",
         ""
     ].join("\n");

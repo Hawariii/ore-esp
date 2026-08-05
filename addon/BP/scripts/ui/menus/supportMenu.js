@@ -17,37 +17,37 @@ import {
 const LINKS = [
 
     {
-        name: "📦 CurseForge",
+        name: "CurseForge",
         url: "https://legacy.curseforge.com/members/aizhu/projects"
     },
 
     {
-        name: "🐙 GitHub",
+        name: "GitHub",
         url: "https://github.com/Hawariii"
     },
 
     {
-        name: "💬 Discord",
+        name: "Discord",
         url: "https://discord.gg/NBjKmzpyxX"
     },
 
     {
-        name: "▶️ YouTube",
+        name: "YouTube",
         url: "https://m.youtube.com/@siaizhu"
     },
 
     {
-        name: "🎵 TikTok",
+        name: "TikTok",
         url: "https://www.tiktok.com/@siiaizhu?_r=1&_t=ZS-94FJMk0cB3B"
     },
 
     {
-        name: "☕ Ko-fi",
+        name: "Ko-fi",
         url: "https://ko-fi.com/aizhu"
     },
 
     {
-        name: "❤️ Sociabuzz",
+        name: "Sociabuzz",
         url: "https://sociabuzz.com/aizhu/tribe"
     }
 
@@ -86,7 +86,7 @@ export async function showSupportMenu(player) {
 
     }
 
-    form.button("⬅ Back");
+    form.button("Back");
 
     const result =
         await form.show(player);

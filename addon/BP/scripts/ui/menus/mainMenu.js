@@ -77,15 +77,15 @@ export async function showMainMenu(player) {
                     : "§aEnable ESP"
             )
 
-            .button("💎 Ore Settings")
+            .button("Ore Settings")
 
-            .button("⚙ Scanner")
+            .button("Scanner")
 
-            .button("📜 Changelog")
+            .button("Changelog")
 
-            .button("❤️ Support")
+            .button("Support")
 
-            .button("❌ Close");
+            .button("Close");
 
     const response =
         await form.show(player);
