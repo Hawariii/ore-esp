@@ -4,17 +4,16 @@
         "description": {
             "identifier": "oreesp:glow_block",
             "is_spawnable": false,
-            "is_summonable": false,
-            "is_experimental": false,
+            "is_summonable": true,
+            "spawn_category": "misc",
 
             "properties": {
-
                 "es:color_index": {
+                    "client_sync": true,
                     "type": "int",
-                    "range": [0, 15],
-                    "default": 0
+                    "default": 0,
+                    "range": [0, 14]
                 }
-
             },
 
             "scripts": {
@@ -30,7 +29,6 @@
             "render_controllers": [
                 "controller.render.glow_block"
             ]
-
         },
 
         "components": {
@@ -45,38 +43,34 @@
                 "height": 0
             },
 
+            "minecraft:selection_box": {
+                "width": 0,
+                "height": 0
+            },
+
             "minecraft:pushable": {
                 "is_pushable": false,
                 "is_pushable_by_piston": false
             },
 
             "minecraft:damage_sensor": {
-                "triggers": []
+                "triggers": [
+                    {
+                        "cause": "all",
+                        "deals_damage": "no"
+                    }
+                ]
             },
+
+            "minecraft:renders_when_invisible": {},
 
             "minecraft:fire_immune": true,
-
-            "minecraft:breathable": {
-                "total_supply": 0,
-                "suffocate_time": 0
-            },
 
             "minecraft:movement": {
                 "value": 0
             },
 
-            "minecraft:movement.basic": {},
-
-            "minecraft:jump.static": {},
-
-            "minecraft:can_climb": false,
-
-            "minecraft:nameable": {},
-
             "minecraft:persistent": {}
-
         }
-
     }
-
 }
